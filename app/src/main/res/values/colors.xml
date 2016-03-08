@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
+    <!--
+        <color name="colorPrimary">#3F51B5</color>
+    -->
+    <color name="colorPrimary">#d94130</color>
+    <!--<color name="colorPrimaryDark">#303F9F</color>-->
+    <color name="colorPrimaryDark">#a63124</color>
     <color name="colorAccent">#FF4081</color>
 
 
@@ -18,4 +22,5 @@
     <color name="bg_msg_input">#e8e8e8</color>
     <color name="text_msg_input">#626262</color>
     <color name="lblFromName">#777777</color>
+    <color name="orange">#f45a2a</color>
 </resources>

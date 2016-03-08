@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CryptoMessaging</string>
+    <string name="available_devices">Available devices</string>
 </resources>

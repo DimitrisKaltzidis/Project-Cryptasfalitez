@@ -15,8 +15,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Connection" />
-        <activity android:name=".Chatroom"></activity>
+        <activity
+            android:name=".Connection"
+            android:label="@string/available_devices" />
+        <activity android:name=".Chatroom" />
     </application>
 
 </manifest>
