@@ -48,6 +48,10 @@ public class ConnectionListAdapter extends ArrayAdapter {
         return convertView;
 
     }
+    public void addBluetoothDevice (BluetoothDevice bluetoothDevice){
+        bluetoothDevices.add(bluetoothDevice);
+        notifyDataSetChanged();
+    }
 
     static class ViewHolder {
         private TextView tvName,tvDescription;

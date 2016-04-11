@@ -19,7 +19,7 @@ public class Splash extends AppCompatActivity {
 
         new Timer().schedule(new TimerTask() {
             public void run() {
-                startActivity(new Intent(Splash.this, Connection.class));
+                startActivity(new Intent(Splash.this, Discovery.class));
             }
         }, 2500);
     }
@@ -28,6 +28,7 @@ public class Splash extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         finish();
+
 
     }
 }
