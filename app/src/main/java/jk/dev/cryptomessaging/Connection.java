@@ -1,37 +1,44 @@
 package jk.dev.cryptomessaging;
 
+import android.bluetooth.BluetoothDevice;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
+
+import java.util.ArrayList;
+
+import jk.dev.cryptomessaging.Utilities.ConnectionListAdapter;
 
 public class Connection extends AppCompatActivity {
 
-    int backPressedCounter = 0;
-    private CoordinatorLayout coordinatorLayout;
-
+    private ListView lvPairedDevices;
+    private ArrayList<BluetoothDevice> bluetoothDevices = null;
+    ConnectionListAdapter adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connection);
 
-        coordinatorLayout = (CoordinatorLayout) findViewById(R.id
-                .coordinatorLayout);
+        lvPairedDevices = (ListView) findViewById(R.id.lvPairedDevices);
 
+
+        adapter = new ConnectionListAdapter(this,bluetoothDevices);
+
+        lvPairedDevices.setAdapter(adapter);
+
+        lvPairedDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+            }
+        });
 
     }
 
 
-    @Override
-    public void onBackPressed() {
-        // super.onBackPressed();
-        if (backPressedCounter == 0) {
-            Snackbar snackbar = Snackbar
-                    .make(coordinatorLayout, "Press back again to exit", Snackbar.LENGTH_LONG);
-            snackbar.show();
-        }else {
-            super.onBackPressed();
-        }
-        backPressedCounter++;
-    }
+
 }
