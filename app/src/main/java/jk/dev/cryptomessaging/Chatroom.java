@@ -1,6 +1,7 @@
 package jk.dev.cryptomessaging;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -45,10 +46,21 @@ public class Chatroom extends AppCompatActivity {
 
         adapter = new MessagesListAdapter(this, listMessages);
         listViewMessages.setAdapter(adapter);
-
-            String deviceName = getIntent().getExtras().getString("DeviceName");
-
-
+        String deviceName = null;
+        BluetoothDevice bluetoothDevice = null;
+        try {
+            deviceName = getIntent().getExtras().getString("DeviceName");
+        } catch (Exception e) {
+            e.printStackTrace();
+            deviceName = null;
+        }
+        try {
+            bluetoothDevice = getIntent().getParcelableExtra("btdevice");
+            Log.d(TAG, "onReceive: CHATROOM INTENT " + bluetoothDevice.getName());
+        } catch (Exception e) {
+            e.printStackTrace();
+            bluetoothDevice = null;
+        }
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -58,8 +70,14 @@ public class Chatroom extends AppCompatActivity {
                 bt.sendMessage(etInputMsg.getText().toString());
             }
         });
+
         bt = new Bluetooth(this, mHandler);
-       connectService(deviceName);
+
+        if (deviceName != null) {
+            connectService(deviceName);
+        } else if (bluetoothDevice != null) {
+            bt.connect(bluetoothDevice);
+        }
     }
 
     public void playSound() {
@@ -104,18 +122,23 @@ public class Chatroom extends AppCompatActivity {
                     Log.d(TAG, "MESSAGE_WRITE ");
                     break;
                 case Bluetooth.MESSAGE_READ:
+
                     byte[] readBuf = (byte[]) msg.obj;
                     String strIncom = new String(readBuf, 0, msg.arg1);
+                    int lastChar = strIncom.length()-1;
+                    Log.d(TAG, "MESSAGE_READ "+strIncom);
                     sb.append(strIncom);
                     int endOfLineIndex = sb.indexOf("\r\n");                            // determine the end-of-line
+                    Message user1 = new Message("user1", strIncom, false);
+                    listMessages.add(user1);
+                    adapter.notifyDataSetChanged();
                     if (endOfLineIndex > 0) {                                            // if end-of-line,
                         String sbprint = sb.substring(0, endOfLineIndex);               // extract string
                         sb.delete(0, sb.length());                                      // and clear
-                        Log.d("READ_FROM_ARDUINO", sbprint);
-                        Message temp_msg = new Message("user2", sbprint, false);
+                        Log.d("READ_FROM_ANDROID", sbprint);
+                        //Message temp_msg = new Message("user2", sbprint, false);
 
-                        listMessages.add(temp_msg);
-                        adapter.notifyDataSetChanged();
+                       // adapter.addMessage(temp_msg);
                         playSound();
                         // tvDistance.setText(sbprint + "cm");
                     }
@@ -130,4 +153,11 @@ public class Chatroom extends AppCompatActivity {
             return false;
         }
     });
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        bt.stop();
+        finish();
+    }
 }

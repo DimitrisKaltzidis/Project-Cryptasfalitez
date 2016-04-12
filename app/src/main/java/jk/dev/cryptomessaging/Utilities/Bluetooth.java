@@ -130,7 +130,7 @@ public class Bluetooth {
 	 * @param device
 	 *            The BluetoothDevice to connect
 	 */
-	private synchronized void connect(BluetoothDevice device) {
+	public synchronized void connect(BluetoothDevice device) {
 		if (D)
 			Log.d(TAG, "connect to: " + device);
 

@@ -45,6 +45,11 @@ public class MessagesListAdapter extends BaseAdapter {
         return position;
     }
 
+    public void addMessage(Message message){
+        messagesItems.add(message);
+        notifyDataSetChanged();
+    }
+
     @SuppressLint("InflateParams")
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {

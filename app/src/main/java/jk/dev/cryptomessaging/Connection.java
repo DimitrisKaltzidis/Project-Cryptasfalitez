@@ -12,6 +12,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -25,6 +26,7 @@ import jk.dev.cryptomessaging.Utilities.ConnectionListAdapter;
 public class Connection extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
+    private static final String TAG = "jk.dev.cryptomessaging";
     private ArrayList<BluetoothDevice> bluetoothDevices = null, allBluetoothDevices = null;
     private ConnectionListAdapter adapter;
     private BluetoothAdapter bluetoothAdapter;
@@ -155,9 +157,7 @@ public class Connection extends AppCompatActivity {
 
             if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
                 //Device is now connected
-                Intent intentOpen = new Intent(Connection.this,Chatroom.class);
-                intent.putExtra("DeviceName",device.getName());
-                startActivity(intentOpen);
+                chatRequestPrompt(device);
 
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
                 //Device is about to disconnect
@@ -226,8 +226,10 @@ public class Connection extends AppCompatActivity {
         builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked OK button
-                Intent intent = new Intent(Connection.this,Chatroom.class);
-                intent.putExtra("DeviceName",device.getName());
+                Intent intent = new Intent(Connection.this, Chatroom.class);
+                intent.putExtra("DeviceName", device.getName());
+                Log.d(TAG, "showChatPrompt: showChatPrompt " + device.getName());
+
                 startActivity(intent);
             }
         });
@@ -256,6 +258,31 @@ public class Connection extends AppCompatActivity {
         builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 unPairDevice(device);
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void chatRequestPrompt(final BluetoothDevice bluetoothDevice) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(Connection.this);
+        builder.setTitle("Chat request");
+        builder.setMessage(bluetoothDevice.getName() + " wants to chat with you");
+        builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                Intent intentOpen = new Intent(Connection.this, Chatroom.class);
+                intentOpen.putExtra("btdevice", bluetoothDevice);
+                Log.d(TAG, "onReceive: BroadcastReceiver " + bluetoothDevice.getName());
+                startActivity(intentOpen);
+               // Toast.makeText(getApplicationContext(), "INCOMING CONNECTION " + bluetoothDevice.getName(), Toast.LENGTH_LONG).show();
                 dialog.dismiss();
             }
         });
