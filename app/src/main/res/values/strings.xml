@@ -1,4 +1,18 @@
 <resources>
     <string name="app_name">CryptoMessaging</string>
     <string name="available_devices">Available devices</string>
+    <string name="ok">OK</string>
+    <string name="cancel">CANCEL</string>
+    <string name="settings">SETTINGS</string>
+    <string name="unpair_device">Unpair device</string>
+    <string name="unpair_with">"Would you like to unpair with "</string>
+    <string name="chat">Chat</string>
+    <string name="chat_with">"Would you like to chat with "</string>
+    <string name="no_bt_support">Your device does not support bluetooth</string>
+    <string name="pair_in_progress">Pairing in progress</string>
+    <string name="scanning_for_devices">Scanning for devices</string>
+    <string name="paired">Paired</string>
+    <string name="unpaired">Unpaired</string>
+    <string name="toogle_visibility">Toggle Visibility</string>
+    <string name="toogle_visibility_message">Would you like to make your device visible to other devices for another 300 seconds?</string>
 </resources>

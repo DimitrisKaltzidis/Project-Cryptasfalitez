@@ -23,7 +23,8 @@
             android:name=".Connection"
             android:label="@string/available_devices" />
         <activity android:name=".Chatroom" />
-        <activity android:name=".Discovery"></activity>
+        <activity android:name=".Discovery" />
+        <activity android:name=".Settings"></activity>
     </application>
 
 </manifest>

@@ -22,4 +22,14 @@
         android:onClick="fabSearchForDevicesClicked"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"/>
+
+
+    <android.support.design.widget.FloatingActionButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/invisible"
+        android:id="@+id/fabVisibility"
+        android:onClick="fabToggleBtVisibility"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"/>
 </RelativeLayout>

@@ -45,7 +45,10 @@ public class Chatroom extends AppCompatActivity {
 
         adapter = new MessagesListAdapter(this, listMessages);
         listViewMessages.setAdapter(adapter);
-        String deviceName = getIntent().getExtras().getString("DeviceName");
+
+            String deviceName = getIntent().getExtras().getString("DeviceName");
+
+
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -56,7 +59,7 @@ public class Chatroom extends AppCompatActivity {
             }
         });
         bt = new Bluetooth(this, mHandler);
-        connectService(deviceName);
+       connectService(deviceName);
     }
 
     public void playSound() {
