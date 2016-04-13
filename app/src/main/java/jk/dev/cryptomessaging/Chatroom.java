@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -67,6 +68,8 @@ public class Chatroom extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chatroom);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         btnSend = (Button) findViewById(R.id.btnSend);
         etInputMsg = (EditText) findViewById(R.id.inputMsg);
@@ -177,7 +180,8 @@ public class Chatroom extends AppCompatActivity {
 
 
                     if (strIncom.contains("image")) {
-                        String[] parts = strIncom.split("-");
+                        String[] parts = strIncom.split("imgSend");
+                        Log.d("MESSAGE_RECEIVED", parts[1]);
                         Drawable drawable = new BitmapDrawable(getResources(), StringToBitMap(parts[1]));
                         Message user1 = new Message("user1", strIncom, false, true, drawable);
                         listMessages.add(user1);
@@ -340,11 +344,12 @@ public class Chatroom extends AppCompatActivity {
 
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        File imgFile = new File("/sdcard/Images/test_image.jpg");
+                        File imgFile = new File(images.get(which).getPath());
                         if (imgFile.exists()) {
                             Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
                             String imageAsString = BitMapToString(myBitmap);
-                            imageAsString = "image-" + imageAsString;
+                            imageAsString = "image-imgSend" + imageAsString;
+                            Log.d("MESSAGE_SEND", imageAsString);
                             bt.sendMessage(imageAsString);
 
                         }

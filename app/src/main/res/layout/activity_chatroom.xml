@@ -27,8 +27,9 @@
         android:layout_height="wrap_content"
         android:background="@color/white"
         android:orientation="horizontal"
-        android:weightSum="4">
+        android:weightSum="3">
         <ImageView
+            android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="0.2"
@@ -50,7 +51,7 @@
             android:id="@+id/btnSend"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.8"
+            android:layout_weight="1"
             android:background="@color/bg_btn_join"
             android:text="Send"
             android:textColor="@color/white" />
