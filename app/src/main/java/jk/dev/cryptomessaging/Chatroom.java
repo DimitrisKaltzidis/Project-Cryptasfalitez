@@ -2,10 +2,16 @@ package jk.dev.cryptomessaging;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +19,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +75,7 @@ public class Chatroom extends AppCompatActivity {
                 listMessages.add(user1);
                 adapter.notifyDataSetChanged();
                 bt.sendMessage(etInputMsg.getText().toString());
+                etInputMsg.setText("");
             }
         });
 
@@ -75,9 +83,18 @@ public class Chatroom extends AppCompatActivity {
 
         if (deviceName != null) {
             connectService(deviceName);
+            setTitle(getString(R.string.chatting_with) + deviceName);
         } else if (bluetoothDevice != null) {
             bt.connect(bluetoothDevice);
+            setTitle(getString(R.string.chatting_with) + bluetoothDevice.getName());
         }
+
+        IntentFilter filter1 = new IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED);
+        IntentFilter filter2 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
+        IntentFilter filter3 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        this.registerReceiver(afterParingReceiver, filter1);
+        this.registerReceiver(afterParingReceiver, filter2);
+        this.registerReceiver(afterParingReceiver, filter3);
     }
 
     public void playSound() {
@@ -125,23 +142,14 @@ public class Chatroom extends AppCompatActivity {
 
                     byte[] readBuf = (byte[]) msg.obj;
                     String strIncom = new String(readBuf, 0, msg.arg1);
-                    int lastChar = strIncom.length()-1;
-                    Log.d(TAG, "MESSAGE_READ "+strIncom);
+                    int lastChar = strIncom.length() - 1;
+                    Log.d(TAG, "MESSAGE_READ " + strIncom);
                     sb.append(strIncom);
                     int endOfLineIndex = sb.indexOf("\r\n");                            // determine the end-of-line
                     Message user1 = new Message("user1", strIncom, false);
                     listMessages.add(user1);
                     adapter.notifyDataSetChanged();
-                    if (endOfLineIndex > 0) {                                            // if end-of-line,
-                        String sbprint = sb.substring(0, endOfLineIndex);               // extract string
-                        sb.delete(0, sb.length());                                      // and clear
-                        Log.d("READ_FROM_ANDROID", sbprint);
-                        //Message temp_msg = new Message("user2", sbprint, false);
-
-                       // adapter.addMessage(temp_msg);
-                        playSound();
-                        // tvDistance.setText(sbprint + "cm");
-                    }
+                    playSound();
                     break;
                 case Bluetooth.MESSAGE_DEVICE_NAME:
                     Log.d(TAG, "MESSAGE_DEVICE_NAME " + msg);
@@ -156,8 +164,64 @@ public class Chatroom extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        super.onPause();
         bt.stop();
         finish();
+        super.onPause();
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        bt.stop();
+        unregisterReceiver(afterParingReceiver);
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        bt.stop();
+        finish();
+        super.onBackPressed();
+    }
+
+    private final BroadcastReceiver afterParingReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+            if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                //Device is now connected
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
+                //Device is about to disconnect
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+               /* //Device has disconnected
+                Toast.makeText(getApplicationContext(), device.getName() + " device disconnected", Toast.LENGTH_SHORT).show();*/
+                chatLeavePrompt(device);
+            }
+        }
+    };
+
+    private void chatLeavePrompt(final BluetoothDevice bluetoothDevice) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(Chatroom.this);
+        builder.setTitle("Warning");
+        builder.setMessage(bluetoothDevice.getName() + " left the chat would you like to return to Available devices");
+        builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
+                finish();
+                // Toast.makeText(getApplicationContext(), "INCOMING CONNECTION " + bluetoothDevice.getName(), Toast.LENGTH_LONG).show();
+
+            }
+        });
+        builder.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }

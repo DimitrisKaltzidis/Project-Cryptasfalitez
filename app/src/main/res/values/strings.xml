@@ -15,4 +15,5 @@
     <string name="unpaired">Unpaired</string>
     <string name="toogle_visibility">Toggle Visibility</string>
     <string name="toogle_visibility_message">Would you like to make your device visible to other devices for another 300 seconds?</string>
+    <string name="chatting_with">"Chatting with "</string>
 </resources>

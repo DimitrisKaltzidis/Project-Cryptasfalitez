@@ -163,6 +163,7 @@ public class Connection extends AppCompatActivity {
                 //Device is about to disconnect
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
                 //Device has disconnected
+                Toast.makeText(getApplicationContext(), device.getName() + " device disconnected", Toast.LENGTH_SHORT).show();
             }
         }
     };
@@ -194,11 +195,41 @@ public class Connection extends AppCompatActivity {
 
     @Override
     public void onDestroy() {
-        unregisterReceiver(mReceiver);
-
+        try {
+            unregisterReceiver(mReceiver);
+            unregisterReceiver(mPairReceiver);
+            unregisterReceiver(afterParingReceiver);
+        } catch (Exception r) {
+            r.printStackTrace();
+        }
         super.onDestroy();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        try {
+            IntentFilter filter1 = new IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED);
+            IntentFilter filter2 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
+            IntentFilter filter3 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+            this.registerReceiver(afterParingReceiver, filter1);
+            this.registerReceiver(afterParingReceiver, filter2);
+            this.registerReceiver(afterParingReceiver, filter3);
+        } catch (Exception r) {
+            r.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(afterParingReceiver);
+        } catch (Exception r) {
+            r.printStackTrace();
+        }
+
+    }
 
     private void pairDevice(BluetoothDevice device) {
         try {
@@ -226,6 +257,7 @@ public class Connection extends AppCompatActivity {
         builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked OK button
+                dialog.dismiss();
                 Intent intent = new Intent(Connection.this, Chatroom.class);
                 intent.putExtra("DeviceName", device.getName());
                 Log.d(TAG, "showChatPrompt: showChatPrompt " + device.getName());
@@ -278,12 +310,13 @@ public class Connection extends AppCompatActivity {
         builder.setMessage(bluetoothDevice.getName() + " wants to chat with you");
         builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
                 Intent intentOpen = new Intent(Connection.this, Chatroom.class);
                 intentOpen.putExtra("btdevice", bluetoothDevice);
                 Log.d(TAG, "onReceive: BroadcastReceiver " + bluetoothDevice.getName());
                 startActivity(intentOpen);
-               // Toast.makeText(getApplicationContext(), "INCOMING CONNECTION " + bluetoothDevice.getName(), Toast.LENGTH_LONG).show();
-                dialog.dismiss();
+                // Toast.makeText(getApplicationContext(), "INCOMING CONNECTION " + bluetoothDevice.getName(), Toast.LENGTH_LONG).show();
+
             }
         });
         builder.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
