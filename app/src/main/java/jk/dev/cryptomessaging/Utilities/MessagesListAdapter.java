@@ -5,7 +5,6 @@ package jk.dev.cryptomessaging.Utilities;
  */
 
 
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -17,7 +16,6 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import jk.dev.cryptomessaging.Message;
 import jk.dev.cryptomessaging.R;
 
 public class MessagesListAdapter extends BaseAdapter {
@@ -45,7 +43,7 @@ public class MessagesListAdapter extends BaseAdapter {
         return position;
     }
 
-    public void addMessage(Message message){
+    public void addMessage(Message message) {
         messagesItems.add(message);
         notifyDataSetChanged();
     }
@@ -75,10 +73,18 @@ public class MessagesListAdapter extends BaseAdapter {
                     null);
         }
 
+
         TextView lblFrom = (TextView) convertView.findViewById(R.id.lblMsgFrom);
+
         TextView txtMsg = (TextView) convertView.findViewById(R.id.txtMsg);
 
-        txtMsg.setText(m.getMessage());
+        if (m.isImage()) {
+            txtMsg.setText(" ");
+          /*  LayoutParams lp = (RelativeLayout.LayoutParams) tv.getLayoutParams();*/
+            txtMsg.setBackground(m.getDrawable());
+        } else {
+            txtMsg.setText(m.getMessage());
+        }
         lblFrom.setText(m.getFromName());
 
         return convertView;

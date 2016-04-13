@@ -27,8 +27,15 @@
         android:layout_height="wrap_content"
         android:background="@color/white"
         android:orientation="horizontal"
-        android:weightSum="3">
-
+        android:weightSum="4">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.2"
+            android:onClick="sendImageClicked"
+            android:src="@drawable/image"
+            android:id="@+id/ivImage"
+            />
         <EditText
             android:id="@+id/inputMsg"
             android:layout_width="0dp"
@@ -43,10 +50,13 @@
             android:id="@+id/btnSend"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="1.8"
             android:background="@color/bg_btn_join"
             android:text="Send"
             android:textColor="@color/white" />
+
+
+
     </LinearLayout>
 
 </LinearLayout>

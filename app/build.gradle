@@ -25,4 +25,6 @@ dependencies {
 
     compile 'com.android.support:appcompat-v7:23.2.0'
     compile 'com.android.support:design:23.0.1'
+    compile 'com.google.guava:guava:19.0'
+    compile 'org.apache.directory.studio:org.apache.commons.io:2.4'
 }
