@@ -50,6 +50,7 @@ public class Bluetooth {
 	private ConnectThread mConnectThread;
 	private ConnectedThread mConnectedThread;
 	private int mState;
+	private boolean isServer;
 
 	// Constants that indicate the current connection state
 	public static final int STATE_NONE = 0; // we're doing nothing
@@ -65,11 +66,12 @@ public class Bluetooth {
 	 * @param handler
 	 *            A Handler to send messages back to the UI Activity
 	 */
-	public Bluetooth(Context context, Handler handler) {
+	public Bluetooth(Context context, Handler handler, boolean isServer) {
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (D) for (BluetoothDevice bd: mAdapter.getBondedDevices()) Log.d(TAG, "Bounded device "+bd);
 		mState = STATE_NONE;
 		mHandler = handler;
+        this.isServer = isServer;
 	}
 
 	/**
@@ -459,6 +461,22 @@ public class Bluetooth {
 			// Keep listening to the InputStream while connected
 			while (true) {
 				try {
+                    //custom protokoloistories
+                    if (isServer){
+                        try {
+                            new DHServer(mmInStream,mmOutStream).run("USE_SKIP_DH_PARAMS");
+                        }catch (Exception e){
+                            Log.e("Protokoloistories",e.getMessage());
+                            return;
+                        }
+                    }else{
+                        try {
+                            new DHClient(mmInStream,mmOutStream).run("USE_SKIP_DH_PARAMS");
+                        }catch (Exception e){
+                            Log.e("Protokoloistories",e.getMessage());
+                            return;
+                        }
+                    }
 					// Read from the InputStream
 					bytes = mmInStream.read(buffer);
 					// Send the obtained bytes to the UI Activity

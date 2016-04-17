@@ -112,12 +112,14 @@ public class Chatroom extends AppCompatActivity {
             }
         });
 
-        bt = new Bluetooth(this, mHandler);
 
-        if (deviceName != null) {
+
+        if (deviceName != null) { //server
+            bt = new Bluetooth(this, mHandler,true);
             connectService(deviceName);
             setTitle(getString(R.string.chatting_with) + deviceName);
-        } else if (bluetoothDevice != null) {
+        } else if (bluetoothDevice != null) { //client
+            bt = new Bluetooth(this, mHandler,false);
             bt.connect(bluetoothDevice);
             setTitle(getString(R.string.chatting_with) + bluetoothDevice.getName());
         }
@@ -144,16 +146,13 @@ public class Chatroom extends AppCompatActivity {
 
     public void connectService(String deviceName) {
         try {
-
             BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             if (bluetoothAdapter.isEnabled()) {
                 bt.start();
                 bt.connectDevice(deviceName);///device name
                 Log.d("BLUETOOTH", "Btservice started - listening");
-
             } else {
                 Log.w("BLUETOOTH", "Btservice started - bluetooth is not enabled");
-
             }
         } catch (Exception e) {
             Log.e("BLUETOOTH", "Unable to start bt ", e);

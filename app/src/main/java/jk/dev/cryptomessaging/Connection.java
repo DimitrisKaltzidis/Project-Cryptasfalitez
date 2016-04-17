@@ -106,14 +106,10 @@ public class Connection extends AppCompatActivity {
             finish();
         } else {
             if (!bluetoothAdapter.isEnabled()) {
-
-
                 Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
-
             }
         }
-
     }
 
     private void showToast(String toastMessage) {
