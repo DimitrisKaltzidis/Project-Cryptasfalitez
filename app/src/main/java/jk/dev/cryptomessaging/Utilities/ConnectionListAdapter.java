@@ -20,12 +20,14 @@ public class ConnectionListAdapter extends ArrayAdapter {
 
     private final Activity context;
     private ArrayList<BluetoothDevice> bluetoothDevices;
+    private ArrayList<TrustedDevice> trustedDevices;
 
-    public ConnectionListAdapter(Activity context, ArrayList<BluetoothDevice> bluetoothDevices) {
+    public ConnectionListAdapter(Activity context, ArrayList<BluetoothDevice> bluetoothDevices, ArrayList<TrustedDevice> trustedDevices) {
         super(context, R.layout.row, bluetoothDevices);
 
         this.context = context;
         this.bluetoothDevices = bluetoothDevices;
+        this.trustedDevices = trustedDevices;
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
@@ -42,18 +44,36 @@ public class ConnectionListAdapter extends ArrayAdapter {
             holder = (ViewHolder) convertView.getTag();
         }
 
+        BluetoothDevice current = bluetoothDevices.get(position);
+        boolean trusted = false;
+        for (TrustedDevice trustedDevice : trustedDevices) {
+            if (trustedDevice.getMacAddress().equals(current.getAddress())) {
+                trusted = true;
+                break;
+            }
+        }
 
-        holder.tvName.setText(bluetoothDevices.get(position).getName());
-        holder.tvDescription.setText(bluetoothDevices.get(position).getAddress());
+        holder.tvName.setText(current.getName());
+        if(trusted){
+            holder.tvDescription.setText(R.string.secure);
+        }else {
+           /* holder.tvDescription.setText(bluetoothDevices.get(position).getAddress());*/
+            if(current.getBondState()==BluetoothDevice.BOND_BONDED){
+                holder.tvDescription.setText(R.string.not_secure);
+            }else
+                holder.tvDescription.setText(R.string.not_paired);
+
+        }
         return convertView;
 
     }
-    public void addBluetoothDevice (BluetoothDevice bluetoothDevice){
+
+    public void addBluetoothDevice(BluetoothDevice bluetoothDevice) {
         bluetoothDevices.add(bluetoothDevice);
         notifyDataSetChanged();
     }
 
     static class ViewHolder {
-        private TextView tvName,tvDescription;
+        private TextView tvName, tvDescription;
     }
 }

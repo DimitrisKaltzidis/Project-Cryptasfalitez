@@ -10,26 +10,35 @@
     tools:context="jk.dev.cryptomessaging.Connection">
 
     <ListView
+        android:id="@+id/lvPairedDevices"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/lvPairedDevices"
-         />
+        android:layout_above="@+id/fabSharePublic" />
 
     <android.support.design.widget.FloatingActionButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/search"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
         android:onClick="fabSearchForDevicesClicked"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"/>
+        android:src="@drawable/search" />
 
 
     <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fabVisibility"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/invisible"
-        android:id="@+id/fabVisibility"
-        android:onClick="fabToggleBtVisibility"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"/>
+        android:layout_alignParentLeft="true"
+        android:onClick="fabToggleBtVisibility"
+        android:src="@drawable/invisible" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fabSharePublic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:onClick="fabSharePublicWithBluetooth"
+        android:src="@drawable/key" />
 </RelativeLayout>

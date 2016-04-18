@@ -16,4 +16,11 @@
     <string name="toogle_visibility">Toggle Visibility</string>
     <string name="toogle_visibility_message">Would you like to make your device visible to other devices for another 300 seconds?</string>
     <string name="chatting_with">"Chatting with "</string>
+    <string name="not_secure">Not man in the middle secure</string>
+    <string name="secure">Secure</string>
+    <string name="not_secure_connection">\? Be warned the connections is not protected against man in the middle attacks. Enter other user public key to secure the connection</string>
+    <string name="enter_key">Enter key</string>
+    <string name="not_paired">Not paired</string>
+    <string name="enter_key_to_secure">" wants to chat with you. The connection thought is vulnerable to man in the middle attacks. Enter other user public key to secure it"</string>
+    <string name="secured">" wants to chat with you."</string>
 </resources>

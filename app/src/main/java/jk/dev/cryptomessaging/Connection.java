@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -15,19 +17,29 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+
+import jk.dev.cryptomessaging.Utilities.Bluetooth;
 import jk.dev.cryptomessaging.Utilities.ConnectionListAdapter;
+import jk.dev.cryptomessaging.Utilities.Preferences;
+import jk.dev.cryptomessaging.Utilities.TrustedDevice;
 
 public class Connection extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final String TAG = "jk.dev.cryptomessaging";
     private ArrayList<BluetoothDevice> bluetoothDevices = null, allBluetoothDevices = null;
+    private ArrayList<TrustedDevice> trustedDevices = null;
     private ConnectionListAdapter adapter;
     private BluetoothAdapter bluetoothAdapter;
     private ProgressDialog progressDialog = null;
@@ -45,8 +57,15 @@ public class Connection extends AppCompatActivity {
         bluetoothDevices = new ArrayList<>();
         allBluetoothDevices = new ArrayList<>();
 
+        List<TrustedDevice> trustedDevicesList = getTrustedDeviceListFromPreferences();//getting trusted devices
+
+        if (trustedDevicesList == null) {
+            trustedDevices = new ArrayList<>();
+        } else
+            trustedDevices = new ArrayList<>(trustedDevicesList);
+
         fabVisibility = (FloatingActionButton) findViewById(R.id.fabVisibility);
-        adapter = new ConnectionListAdapter(this, bluetoothDevices);
+        adapter = new ConnectionListAdapter(this, bluetoothDevices, trustedDevices);
 
         lvDevices.setAdapter(adapter);
 
@@ -82,10 +101,17 @@ public class Connection extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 BluetoothDevice device = bluetoothDevices.get(i);
+                TrustedDevice trustedDevice = null;
+                for (TrustedDevice currentTrustedDevice : trustedDevices) {
+                    if (currentTrustedDevice.getMacAddress().equals(device.getAddress())) {
+                        trustedDevice = currentTrustedDevice;
+                        break;
+                    }
+                }
                 if (device.getBondState() == BluetoothDevice.BOND_NONE) {
                     pairDevice(device);
                 } else if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
-                    showChatPrompt(device);
+                    showChatPrompt(device, trustedDevice);
                 } else {
                     showToast(getString(R.string.pair_in_progress));
                 }
@@ -154,7 +180,14 @@ public class Connection extends AppCompatActivity {
 
             if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
                 //Device is now connected
-                chatRequestPrompt(device);
+                TrustedDevice trustedDevice = null;
+                for (TrustedDevice currentTrustedDevice : trustedDevices) {
+                    if (currentTrustedDevice.getMacAddress().equals(device.getAddress())) {
+                        trustedDevice = currentTrustedDevice;
+                        break;
+                    }
+                }
+                chatRequestPrompt(device, trustedDevice);
 
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
                 //Device is about to disconnect
@@ -247,16 +280,20 @@ public class Connection extends AppCompatActivity {
         }
     }
 
-    private void showChatPrompt(final BluetoothDevice device) {
+    private void showChatPrompt(final BluetoothDevice device, final TrustedDevice trustedDevice) {
         AlertDialog.Builder builder = new AlertDialog.Builder(Connection.this);
         builder.setTitle(getString(R.string.chat));
-        builder.setMessage(getString(R.string.chat_with) + device.getName());
+        if (trustedDevice != null)
+            builder.setMessage(getString(R.string.chat_with) + device.getName());
+        else
+            builder.setMessage(getString(R.string.chat_with) + device.getName() + getString(R.string.not_secure_connection));
         builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked OK button
                 dialog.dismiss();
                 Intent intent = new Intent(Connection.this, Chatroom.class);
                 intent.putExtra("DeviceName", device.getName());
+                intent.putExtra("DevicePublicKey", trustedDevice.getPublicKey());
                 Log.d(TAG, "showChatPrompt: showChatPrompt " + device.getName());
 
                 startActivity(intent);
@@ -267,17 +304,54 @@ public class Connection extends AppCompatActivity {
                 dialog.dismiss();
             }
         });
-
-        builder.setNeutralButton(getString(R.string.settings), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Intent intent = new Intent(Connection.this, Settings.class);
-                startActivity(intent);
-            }
-        });
+        if (trustedDevice != null)
+            builder.setNeutralButton(getString(R.string.settings), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Intent intent = new Intent(Connection.this, Settings.class);
+                    startActivity(intent);
+                }
+            });
+        else
+            builder.setNeutralButton(getString(R.string.enter_key), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    enterTrustDeviceKeyPrompt(device);
+                }
+            });
         // Create the AlertDialog
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+
+    private void enterTrustDeviceKeyPrompt(final BluetoothDevice bluetoothDevice) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter other user public key");
+        // Set up the input
+        final EditText input = new EditText(this);
+
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String key = input.getText().toString();
+                TrustedDevice trustedDevice = new TrustedDevice(bluetoothDevice.getAddress(), bluetoothDevice.getName(), key);
+                List<TrustedDevice> tempTrustedDevices = getTrustedDeviceListFromPreferences();
+                tempTrustedDevices.add(trustedDevice);
+                saveTrustedDeviceListToPreferences(tempTrustedDevices);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
     }
 
     private void unPairDevicePrompt(final BluetoothDevice device) {
@@ -301,15 +375,32 @@ public class Connection extends AppCompatActivity {
         dialog.show();
     }
 
-    private void chatRequestPrompt(final BluetoothDevice bluetoothDevice) {
+    private void chatRequestPrompt(final BluetoothDevice bluetoothDevice, final TrustedDevice trustedDevice) {
         AlertDialog.Builder builder = new AlertDialog.Builder(Connection.this);
         builder.setTitle("Chat request");
-        builder.setMessage(bluetoothDevice.getName() + " wants to chat with you");
+        if (trustedDevice == null) {
+            builder.setMessage(bluetoothDevice.getName() + getString(R.string.enter_key_to_secure));
+
+            builder.setNeutralButton(getString(R.string.enter_key), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    enterTrustDeviceKeyPrompt(bluetoothDevice);
+                }
+            });
+        } else {
+            builder.setMessage(bluetoothDevice.getName() + getString(R.string.secured));
+        }
         builder.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 dialog.dismiss();
                 Intent intentOpen = new Intent(Connection.this, Chatroom.class);
                 intentOpen.putExtra("btdevice", bluetoothDevice);
+                try {
+                    intentOpen.putExtra("DevicePublicKey", trustedDevice.getPublicKey());
+                } catch (Exception r) {
+                    r.printStackTrace();
+                }
+
                 Log.d(TAG, "onReceive: BroadcastReceiver " + bluetoothDevice.getName());
                 startActivity(intentOpen);
                 // Toast.makeText(getApplicationContext(), "INCOMING CONNECTION " + bluetoothDevice.getName(), Toast.LENGTH_LONG).show();
@@ -321,6 +412,7 @@ public class Connection extends AppCompatActivity {
                 dialog.dismiss();
             }
         });
+
 
         // Create the AlertDialog
         AlertDialog dialog = builder.create();
@@ -340,5 +432,67 @@ public class Connection extends AppCompatActivity {
         }
     }
 
+    private List<TrustedDevice> getTrustedDeviceListFromPreferences() {
+        final String TRUSTED_DEVICES = "trusted_devices";
+        String connectionsJSONString = PreferenceManager.getDefaultSharedPreferences(this).getString(TRUSTED_DEVICES, null);
+        Type type = new TypeToken<List<TrustedDevice>>() {
+        }.getType();
+        List<TrustedDevice> achievements = new Gson().fromJson(connectionsJSONString, type);
 
+        return achievements;
+    }
+
+
+    private void saveTrustedDeviceListToPreferences(List<TrustedDevice> achievementListToSave) {
+        final String TRUSTED_DEVICES = "trusted_devices";
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        String connectionsJSONString = new Gson().toJson(achievementListToSave);
+        editor.putString(TRUSTED_DEVICES, connectionsJSONString);
+        editor.commit();
+    }
+
+    public void fabSharePublicWithBluetooth(View view) {
+        enterEmailAddressPrompt();
+    }
+
+    private void enterEmailAddressPrompt() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter other user email address");
+        // Set up the input
+        final EditText input = new EditText(this);
+
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String address = input.getText().toString();
+                sendEmail(address);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+    }
+
+    private void sendEmail(String emailAddress) {
+        String publicKey = Preferences.loadPrefsString("PUBLIC_KEY", "NO_KEY", getApplicationContext());
+        Intent i = new Intent(Intent.ACTION_SEND);
+        i.setType("message/rfc822");
+        i.putExtra(Intent.EXTRA_EMAIL, new String[]{emailAddress});
+        i.putExtra(Intent.EXTRA_SUBJECT, "CRYPTO ASFALITEZ PUBLIC KEY ");
+        i.putExtra(Intent.EXTRA_TEXT, publicKey);
+        try {
+            startActivity(Intent.createChooser(i, "Send mail..."));
+        } catch (android.content.ActivityNotFoundException ex) {
+            Toast.makeText(Connection.this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+        }
+    }
 }

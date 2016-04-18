@@ -63,6 +63,7 @@ public class Chatroom extends AppCompatActivity {
     private Context context = this;
     private boolean playSound = false;
     private static StringBuilder sb = new StringBuilder();
+    private String publicKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,6 +100,12 @@ public class Chatroom extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             bluetoothDevice = null;
+        }
+
+        try{
+            publicKey = getIntent().getExtras().getString("DevicePublicKey");
+        }catch (Exception e){
+            e.printStackTrace();
         }
 
         btnSend.setOnClickListener(new View.OnClickListener() {
