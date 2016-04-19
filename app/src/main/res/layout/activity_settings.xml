@@ -9,4 +9,66 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="jk.dev.cryptomessaging.Settings">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/cryptography_algorithms"
+        android:textColor="#000000"
+        android:id="@+id/textView"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true" />
+
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_marginTop="10dp"
+        android:id="@+id/rgAlgorithms"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentStart="true">
+
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/aes"
+            android:id="@+id/rbAes"
+            android:checked="true" />
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/des"
+            android:id="@+id/rbDes"
+            android:checked="false" />
+
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:layout_marginTop="10dp"
+        android:text="@string/hmac"
+        android:textColor="#000000"
+        android:id="@+id/tvHMAC"
+        android:layout_below="@+id/rgAlgorithms"
+        android:layout_alignParentStart="true" />
+
+
+    <RadioButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sha2"
+        android:checked="true"
+        android:layout_marginTop="10dp"
+        android:enabled="false"
+        android:layout_below="@+id/tvHMAC"
+        android:layout_alignParentStart="true"
+        android:id="@+id/radioButton" />
+
+
+
 </RelativeLayout>

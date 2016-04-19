@@ -3,7 +3,7 @@
     <string name="available_devices">Available devices</string>
     <string name="ok">OK</string>
     <string name="cancel">CANCEL</string>
-    <string name="settings">SETTINGS</string>
+    <string name="settings">Settings</string>
     <string name="unpair_device">Unpair device</string>
     <string name="unpair_with">"Would you like to unpair with "</string>
     <string name="chat">Chat</string>
@@ -23,4 +23,9 @@
     <string name="not_paired">Not paired</string>
     <string name="enter_key_to_secure">" wants to chat with you. The connection thought is vulnerable to man in the middle attacks. Enter other user public key to secure it"</string>
     <string name="secured">" wants to chat with you."</string>
+    <string name="cryptography_algorithms">Cryptographic algorithms</string>
+    <string name="aes">AES</string>
+    <string name="des">DES</string>
+    <string name="hmac">HMAC</string>
+    <string name="sha2">SHA2</string>
 </resources>
