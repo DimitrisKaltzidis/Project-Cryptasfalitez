@@ -29,6 +29,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.google.common.base.Charsets;
 
@@ -137,6 +138,8 @@ public class Chatroom extends AppCompatActivity {
         this.registerReceiver(afterParingReceiver, filter1);
         this.registerReceiver(afterParingReceiver, filter2);
         this.registerReceiver(afterParingReceiver, filter3);
+
+
     }
 
     public void playSound() {
