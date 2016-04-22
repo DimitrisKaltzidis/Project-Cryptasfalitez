@@ -51,10 +51,12 @@ public class DHServer {
     InputStream inputStream;
     OutputStream outputStream;
 
+    PublicKey clientPublicKey;
 
-    public DHServer(InputStream inputStream, OutputStream outputStream) {
+    public DHServer(InputStream inputStream, OutputStream outputStream, String strclientRSAPublicKey) {
         this.inputStream = inputStream;
         this.outputStream = outputStream;
+        this.clientPublicKey = KeystoreManager.base64ToPublicKey(strclientRSAPublicKey);
     }
 
     public void run(String mode) throws Exception {
@@ -96,77 +98,28 @@ public class DHServer {
          * BLUETOOTH SEND
          */
 
-
-        // Alice encodes her public key, and sends it over to Bob.
+        // Alice encodes her public key
         byte[] alicePubKeyEnc = aliceKpair.getPublic().getEncoded();
-        Log.d(alice,"Alice encoded key:" + new String(alicePubKeyEnc));
-        outputStream.write(alicePubKeyEnc);
-
-
-        /*
-         * Let's turn over to Bob. Bob has received Alice's public key
-         * in encoded format.
-         * He instantiates a DH public key from the encoded key material.
-         */
-        KeyFactory bobKeyFac = KeyFactory.getInstance("DH");
-        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec
-                (alicePubKeyEnc);
-        PublicKey alicePubKey = bobKeyFac.generatePublic(x509KeySpec);
-
-
-        /*****
-         * BLUETOOTH GET
-         */
-        /*
-         * Bob gets the DH parameters associated with Alice's public key.
-         * He must use the same parameters when he generates his own key
-         * pair.
-         */
-//        DHParameterSpec dhParamSpec = ((DHPublicKey) alicePubKey).getParams();
-//
-//        // Bob creates his own DH key pair
-//        System.out.println("BOB: Generate DH keypair ...");
-//        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH");
-//        bobKpairGen.initialize(dhParamSpec);
-//        KeyPair bobKpair = bobKpairGen.generateKeyPair();
-//
-//        // Bob creates and initializes his DH KeyAgreement object
-//        System.out.println("BOB: Initialization ...");
-//        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH");
-//        bobKeyAgree.init(bobKpair.getPrivate());
-
-        /*****
-         * BLUETOOTH SEND
-         */
-        // Bob encodes his public key, and sends it over to Alice.
-//        byte[] bobPubKeyEnc = bobKpair.getPublic().getEncoded();
-
-
-        /*
-         * Alice uses Bob's public key for the first (and only) phase
-         * of her version of the DH
-         * protocol.
-         * Before she can do so, she has to instantiate a DH public key
-         * from Bob's encoded key material.
-         */
+        X509EncodedKeySpec aliceX509spec = new X509EncodedKeySpec(alicePubKeyEnc);
+        Log.d(alice,"Alice x509.encoded key:" + new String(aliceX509spec.toString()));
+        // Alice kani encrypt to public key tis (periexi ta DH values) me to RSA public key tu bob
+        byte[] encryptedAlicePubKey = KeystoreManager.encryptByteArray(KeystoreManager.getMyPublicKey(),aliceX509spec.getEncoded());
+        // and sends it over to Bob.
+        outputStream.write(encryptedAlicePubKey);
 
         //Alice get bob key
-        byte [] bobPubKeyEnc = new byte[1024];
-        inputStream.read(bobPubKeyEnc);
-
+        byte [] encryptedBobPubKeyEncoded = new byte[512];
+        inputStream.read(encryptedBobPubKeyEncoded);
+        // decrypt bob key
+        byte[] bobPubKeyEnc = KeystoreManager.decryptByteArray(encryptedBobPubKeyEncoded);
+        // decode bob key
         KeyFactory aliceKeyFac = KeyFactory.getInstance("DH");
-        x509KeySpec = new X509EncodedKeySpec(bobPubKeyEnc);
+        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bobPubKeyEnc);
         PublicKey bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
+
+
         System.out.println("ALICE: Execute PHASE1 ...");
         aliceKeyAgree.doPhase(bobPubKey, true);
-
-        /*
-         * Bob uses Alice's public key for the first (and only) phase
-         * of his version of the DH
-         * protocol.
-         */
-//        System.out.println("BOB: Execute PHASE1 ...");
-//        bobKeyAgree.doPhase(alicePubKey, true);
 
         /*
          * At this stage, both Alice and Bob have completed the DH key
@@ -175,18 +128,6 @@ public class DHServer {
          */
         byte[] aliceSharedSecret = aliceKeyAgree.generateSecret();
         int aliceLen = aliceSharedSecret.length;
-
-//        byte[] bobSharedSecret = new byte[aliceLen];
-//        int bobLen;
-//        try {
-//            // show example of what happens if you
-//            // provide an output buffer that is too short
-//            bobLen = bobKeyAgree.generateSecret(bobSharedSecret, 1);
-//        } catch (ShortBufferException e) {
-//            System.out.println(e.getMessage());
-//        }
-//        // provide output buffer of required size
-//        bobLen = bobKeyAgree.generateSecret(bobSharedSecret, 0);
 
         Log.d(alice,"Alice secret: " +
                 toHexString(aliceSharedSecret));

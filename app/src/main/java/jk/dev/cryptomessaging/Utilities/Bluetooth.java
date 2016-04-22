@@ -51,6 +51,10 @@ public class Bluetooth {
 	private ConnectedThread mConnectedThread;
 	private int mState;
 	private boolean isServer;
+    private String bobPublicKey;
+    private String alicePublicKey;
+
+
 
 	// Constants that indicate the current connection state
 	public static final int STATE_NONE = 0; // we're doing nothing
@@ -72,6 +76,8 @@ public class Bluetooth {
 		mState = STATE_NONE;
 		mHandler = handler;
         this.isServer = isServer;
+        bobPublicKey = null;
+        alicePublicKey = null;
 	}
 
 	/**
@@ -155,6 +161,18 @@ public class Bluetooth {
 		mConnectThread.start();
 		setState(STATE_CONNECTING);
 	}
+
+    public void setBobPublicKey(String key){
+        if (!isServer)
+            return;
+        bobPublicKey = key;
+    }
+
+    public void setAlicePublicKey(String key){
+        if (isServer)
+            return;
+        alicePublicKey = key;
+    }
 
 	/**
 	 * Start the ConnectedThread to begin managing a Bluetooth connection
@@ -464,16 +482,16 @@ public class Bluetooth {
                     //custom protokoloistories
                     if (isServer){
                         try {
-                            new DHServer(mmInStream,mmOutStream).run("USE_SKIP_DH_PARAMS");
+                            new DHServer(mmInStream,mmOutStream,bobPublicKey).run("USE_SKIP_DH_PARAMS");
                         }catch (Exception e){
-                            Log.e("Protokoloistories",e.getMessage());
+                            Log.e("Protokoloistories",Log.getStackTraceString(e));
                             return;
                         }
                     }else{
                         try {
-                            new DHClient(mmInStream,mmOutStream).run("USE_SKIP_DH_PARAMS");
+                            new DHClient(mmInStream,mmOutStream,alicePublicKey).run("USE_SKIP_DH_PARAMS");
                         }catch (Exception e){
-                            Log.e("Protokoloistories",e.getMessage());
+                            Log.e("Protokoloistories",Log.getStackTraceString(e));
                             return;
                         }
                     }

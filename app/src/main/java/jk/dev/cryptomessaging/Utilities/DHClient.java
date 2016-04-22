@@ -29,10 +29,12 @@ public class DHClient {
     final String bob = "DHClient";
     InputStream inputStream;
     OutputStream outputStream;
+    PublicKey serverPublicKey;
 
-    public DHClient(InputStream inputStream, OutputStream outputStream) {
+    public DHClient(InputStream inputStream, OutputStream outputStream, String strServerPublicKey) {
         this.inputStream = inputStream;
         this.outputStream = outputStream;
+        this.serverPublicKey = KeystoreManager.base64ToPublicKey(strServerPublicKey);
     }
 
     public void run(String mode) throws Exception {
@@ -56,42 +58,20 @@ public class DHClient {
                     skip1024Base);
         }
 
-        /*
-         * Alice creates her own DH key pair, using the DH parameters from
-         * above
-         */
-//        System.out.println("ALICE: Generate DH keypair ...");
-//        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH");
-//        aliceKpairGen.initialize(dhSkipParamSpec);
-//        KeyPair aliceKpair = aliceKpairGen.generateKeyPair();
-//
-//        // Alice creates and initializes her DH KeyAgreement object
-//        System.out.println("ALICE: Initialization ...");
-//        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH");
-//        aliceKeyAgree.init(aliceKpair.getPrivate());
-//
-//        /*****
-//         * BLUETOOTH SEND
-//         */
-//        // Alice encodes her public key, and sends it over to Bob.
-//        byte[] alicePubKeyEnc = aliceKpair.getPublic().getEncoded();
-
-        /*
-         * Let's turn over to Bob. Bob has received Alice's public key
-         * in encoded format.
-         * He instantiates a DH public key from the encoded key material.
+        /*****
+         * BLUETOOTH GET
          */
 
         //Bob get Alice Key
-        byte[] alicePubKeyEnc = new byte[1024];
-        inputStream.read(alicePubKeyEnc);
-
+        byte[] encryptedAlicePubKeyEncoded = new byte[512]; //encrypted with rsa 4096
+        inputStream.read(encryptedAlicePubKeyEncoded);
+        //decrypt with Bob's RSA private key
+        byte[] alicePubKeyEnc = KeystoreManager.decryptByteArray(encryptedAlicePubKeyEncoded);
+        //decode alice key
         KeyFactory bobKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec
                 (alicePubKeyEnc);
         PublicKey alicePubKey = bobKeyFac.generatePublic(x509KeySpec);
-
-
         /*****
          * Bob gets the DH parameters associated with Alice's public key.
          * He must use the same parameters when he generates his own key
@@ -116,20 +96,9 @@ public class DHClient {
         // Bob encodes his public key, and sends it over to Alice.
         byte[] bobPubKeyEnc = bobKpair.getPublic().getEncoded();
         Log.d(bob,"bob encoded key: " + new String(bobPubKeyEnc));
-        outputStream.write(bobPubKeyEnc);
-
-        /*
-         * Alice uses Bob's public key for the first (and only) phase
-         * of her version of the DH
-         * protocol.
-         * Before she can do so, she has to instantiate a DH public key
-         * from Bob's encoded key material.
-         */
-//        KeyFactory aliceKeyFac = KeyFactory.getInstance("DH");
-//        x509KeySpec = new X509EncodedKeySpec(bobPubKeyEnc);
-//        PublicKey bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
-//        System.out.println("ALICE: Execute PHASE1 ...");
-//        aliceKeyAgree.doPhase(bobPubKey, true);
+        // encrypt with Alice RSA public key
+        byte[] encryptedBobPubKey = KeystoreManager.encryptByteArray(serverPublicKey,bobPubKeyEnc);
+        outputStream.write(encryptedBobPubKey);
 
         /*
          * Bob uses Alice's public key for the first (and only) phase
@@ -148,19 +117,7 @@ public class DHClient {
 //        int aliceLen = aliceSharedSecret.length;
 
         byte[] bobSharedSecret = bobKeyAgree.generateSecret();
-//        int bobLen;
-//        try {
-//            // show example of what happens if you
-//            // provide an output buffer that is too short
-//            bobLen = bobKeyAgree.generateSecret(bobSharedSecret, 1);
-//        } catch (ShortBufferException e) {
-//            System.out.println(e.getMessage());
-//        }
-        // provide output buffer of required size
-//        bobLen = bobKeyAgree.generateSecret(bobSharedSecret, 0);
 
-//        System.out.println("Alice secret: " +
-//                toHexString(aliceSharedSecret));
         System.out.println("Bob secret: " +
                 toHexString(bobSharedSecret));
 

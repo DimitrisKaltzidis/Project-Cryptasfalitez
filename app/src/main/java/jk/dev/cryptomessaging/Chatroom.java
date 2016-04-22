@@ -64,7 +64,7 @@ public class Chatroom extends AppCompatActivity {
     private Context context = this;
     private boolean playSound = false;
     private static StringBuilder sb = new StringBuilder();
-    private String publicKey;
+    private String othersPublicKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +72,18 @@ public class Chatroom extends AppCompatActivity {
         setContentView(R.layout.activity_chatroom);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        //get client/receiver public key from Connection
+        if (savedInstanceState == null) {
+            Bundle extras = getIntent().getExtras();
+            if(extras == null) {
+                othersPublicKey = null;
+            } else {
+                othersPublicKey = extras.getString("DevicePublicKey");
+            }
+        } else {
+            othersPublicKey = (String) savedInstanceState.getSerializable("DevicePublicKey");
+        }
 
         btnSend = (Button) findViewById(R.id.btnSend);
         etInputMsg = (EditText) findViewById(R.id.inputMsg);
@@ -103,12 +115,6 @@ public class Chatroom extends AppCompatActivity {
             bluetoothDevice = null;
         }
 
-        try{
-            publicKey = getIntent().getExtras().getString("DevicePublicKey");
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -120,15 +126,15 @@ public class Chatroom extends AppCompatActivity {
             }
         });
 
-
-
         if (deviceName != null) { //server
             bt = new Bluetooth(this, mHandler,true);
             connectService(deviceName);
+            bt.setBobPublicKey(othersPublicKey);//client/bob RSA public key
             setTitle(getString(R.string.chatting_with) + deviceName);
         } else if (bluetoothDevice != null) { //client
             bt = new Bluetooth(this, mHandler,false);
             bt.connect(bluetoothDevice);
+            bt.setAlicePublicKey(othersPublicKey);//server/alice RSA public key
             setTitle(getString(R.string.chatting_with) + bluetoothDevice.getName());
         }
 

@@ -35,6 +35,7 @@ import java.util.List;
 
 import jk.dev.cryptomessaging.Utilities.Bluetooth;
 import jk.dev.cryptomessaging.Utilities.ConnectionListAdapter;
+import jk.dev.cryptomessaging.Utilities.KeystoreManager;
 import jk.dev.cryptomessaging.Utilities.Preferences;
 import jk.dev.cryptomessaging.Utilities.TrustedDevice;
 
@@ -48,7 +49,6 @@ public class Connection extends AppCompatActivity {
     private BluetoothAdapter bluetoothAdapter;
     private ProgressDialog progressDialog = null;
     private FloatingActionButton fabVisibility;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +60,7 @@ public class Connection extends AppCompatActivity {
 
         bluetoothDevices = new ArrayList<>();
         allBluetoothDevices = new ArrayList<>();
+
 
         List<TrustedDevice> trustedDevicesList = getTrustedDeviceListFromPreferences();//getting trusted devices
 
@@ -278,7 +279,6 @@ public class Connection extends AppCompatActivity {
         try {
             Method method = device.getClass().getMethod("removeBond", (Class[]) null);
             method.invoke(device, (Object[]) null);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -299,7 +299,6 @@ public class Connection extends AppCompatActivity {
                 intent.putExtra("DeviceName", device.getName());
                 intent.putExtra("DevicePublicKey", trustedDevice.getPublicKey());
                 Log.d(TAG, "showChatPrompt: showChatPrompt " + device.getName());
-
                 startActivity(intent);
             }
         });
@@ -344,6 +343,9 @@ public class Connection extends AppCompatActivity {
                 String key = input.getText().toString();
                 TrustedDevice trustedDevice = new TrustedDevice(bluetoothDevice.getAddress(), bluetoothDevice.getName(), key);
                 List<TrustedDevice> tempTrustedDevices = getTrustedDeviceListFromPreferences();
+                    if (tempTrustedDevices==null){
+                        tempTrustedDevices = new ArrayList<TrustedDevice>();
+                    }
                 tempTrustedDevices.add(trustedDevice);
                 saveTrustedDeviceListToPreferences(tempTrustedDevices);
             }
@@ -436,15 +438,18 @@ public class Connection extends AppCompatActivity {
         }
     }
 
-    private List<TrustedDevice> getTrustedDeviceListFromPreferences() {
+    public List<TrustedDevice> getTrustedDeviceListFromPreferences() {
         final String TRUSTED_DEVICES = "trusted_devices";
         String connectionsJSONString = PreferenceManager.getDefaultSharedPreferences(this).getString(TRUSTED_DEVICES, null);
         Type type = new TypeToken<List<TrustedDevice>>() {
         }.getType();
         List<TrustedDevice> achievements = new Gson().fromJson(connectionsJSONString, type);
-
+        if (achievements==null){
+            Log.e("peos","get list is null");
+        }
         return achievements;
     }
+
 
 
     private void saveTrustedDeviceListToPreferences(List<TrustedDevice> achievementListToSave) {
@@ -460,12 +465,10 @@ public class Connection extends AppCompatActivity {
     }
 
     private void enterEmailAddressPrompt() {
-
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter other user email address");
         // Set up the input
         final EditText input = new EditText(this);
-
         builder.setView(input);
 
         // Set up the buttons
@@ -487,12 +490,11 @@ public class Connection extends AppCompatActivity {
     }
 
     private void sendEmail(String emailAddress) {
-        String publicKey = Preferences.loadPrefsString("PUBLIC_KEY", "NO_KEY", getApplicationContext());
         Intent i = new Intent(Intent.ACTION_SEND);
         i.setType("message/rfc822");
         i.putExtra(Intent.EXTRA_EMAIL, new String[]{emailAddress});
         i.putExtra(Intent.EXTRA_SUBJECT, "CRYPTO ASFALITEZ PUBLIC KEY ");
-        i.putExtra(Intent.EXTRA_TEXT, publicKey);
+        i.putExtra(Intent.EXTRA_TEXT, KeystoreManager.publicKeyToBase64());
         try {
             startActivity(Intent.createChooser(i, "Send mail..."));
         } catch (android.content.ActivityNotFoundException ex) {
