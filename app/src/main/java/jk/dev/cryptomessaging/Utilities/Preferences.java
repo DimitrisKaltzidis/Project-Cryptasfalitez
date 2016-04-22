@@ -9,9 +9,6 @@ import android.util.Log;
 
 public class Preferences {
 
-
-
-
     @SuppressLint("LongLogTag")
     static public void savePrefsString(String toBeSaved, String valueToBeSaved,
                                        Context context) {

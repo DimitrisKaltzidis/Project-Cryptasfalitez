@@ -31,7 +31,10 @@ import java.security.PublicKey;
 import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAKeyGenParameterSpec;
@@ -62,14 +65,14 @@ public class KeystoreManager {
 
     public static KeyStore keyStore;
 
-    public KeystoreManager(Context context){
+    public KeystoreManager(Context context) {
         this.context = context;
         try {
             keyStore = KeyStore.getInstance("AndroidKeyStore");
             keyStore.load(null);
             createNewKeys();
         } catch (IOException | KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | CertificateException e) {
-            Log.e("CreatingKeys",Log.getStackTraceString(e));
+            Log.e("CreatingKeys", Log.getStackTraceString(e));
         } catch (NoSuchProviderException e) {
             e.printStackTrace();
         } catch (InvalidAlgorithmParameterException e) {
@@ -84,26 +87,25 @@ public class KeystoreManager {
             while (aliases.hasMoreElements()) {
                 keyAliases.add(aliases.nextElement());
             }
+        } catch (Exception e) {
         }
-        catch(Exception e) {}
 
-        for (String a:keyAliases){
-            Log.d("zzz",a);
-            Log.d("gg", String.valueOf(keyStore.getKey(a,"".toCharArray())));
+        for (String a : keyAliases) {
+            Log.d("zzz", a);
+            Log.d("gg", String.valueOf(keyStore.getKey(a, "".toCharArray())));
         }
 
 //        if(listAdapter != null)
 //            listAdapter.notifyDataSetChanged();
     }
 
-    public static String publicKeyToBase64(){
+    public static String publicKeyToBase64() {
         String alias = "user";
         try {
             KeyStore.PrivateKeyEntry privateKeyEntry = null;
-            privateKeyEntry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(alias, null);
-            PublicKey publicKey = privateKeyEntry.getCertificate().getPublicKey();
-            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(publicKey.getEncoded());
-            return Base64.encodeToString(x509EncodedKeySpec.getEncoded(),Base64.DEFAULT);
+            privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, null);
+            RSAPublicKey publicKey =  (RSAPublicKey) privateKeyEntry.getCertificate().getPublicKey();
+            return Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (UnrecoverableEntryException e) {
@@ -114,12 +116,12 @@ public class KeystoreManager {
         return null;
     }
 
-    public static PublicKey base64ToPublicKey(String base64){
+    public static RSAPublicKey base64ToPublicKey(String base64){
         try {
             byte[] data = Base64.decode(base64,Base64.DEFAULT);
             X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            return keyFactory.generatePublic(spec);
+            return (RSAPublicKey) keyFactory.generatePublic(spec);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeySpecException e) {
@@ -129,6 +131,7 @@ public class KeystoreManager {
     }
 
     public void createNewKeys() throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        refreshKeys();
         String alias = "user";
         try {
             // Create new key if needed
@@ -202,7 +205,7 @@ public class KeystoreManager {
         return privateKeyEntry.getCertificate().getPublicKey();
     }
 
-    public static byte[] encryptByteArray(PublicKey publicKey, byte[] initialText) {
+    public static byte[] encryptByteArray(RSAPublicKey publicKey, byte[] initialText) {
         try {
             Cipher inCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             inCipher.init(Cipher.ENCRYPT_MODE, publicKey);
@@ -226,7 +229,7 @@ public class KeystoreManager {
         String alias = "user";
         try {
             KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(alias, null);
-            PrivateKey privateKey = privateKeyEntry.getPrivateKey();
+            RSAPrivateKey privateKey = (RSAPrivateKey) privateKeyEntry.getPrivateKey();
 
             Cipher output = Cipher.getInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             output.init(Cipher.DECRYPT_MODE, privateKey);

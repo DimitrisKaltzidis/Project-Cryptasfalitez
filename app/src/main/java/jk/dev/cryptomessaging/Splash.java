@@ -37,13 +37,14 @@ public class Splash extends AppCompatActivity {
 
         getSupportActionBar().hide();
 
+        KeystoreManager ksm = new KeystoreManager(getApplicationContext());
+
         new Timer().schedule(new TimerTask() {
             public void run() {
                 startActivity(new Intent(Splash.this, Connection.class));
             }
         }, 2500);
 
-        KeystoreManager ksm = new KeystoreManager(getApplicationContext());
     }
 
     @Override

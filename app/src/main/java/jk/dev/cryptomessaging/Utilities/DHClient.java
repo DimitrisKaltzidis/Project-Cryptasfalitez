@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.*;
 
 import javax.crypto.*;
@@ -29,7 +30,7 @@ public class DHClient {
     final String bob = "DHClient";
     InputStream inputStream;
     OutputStream outputStream;
-    PublicKey serverPublicKey;
+    RSAPublicKey serverPublicKey;
 
     public DHClient(InputStream inputStream, OutputStream outputStream, String strServerPublicKey) {
         this.inputStream = inputStream;
@@ -57,21 +58,20 @@ public class DHClient {
             dhSkipParamSpec = new DHParameterSpec(skip1024Modulus,
                     skip1024Base);
         }
-
         /*****
          * BLUETOOTH GET
          */
-
         //Bob get Alice Key
-        byte[] encryptedAlicePubKeyEncoded = new byte[512]; //encrypted with rsa 4096
-        inputStream.read(encryptedAlicePubKeyEncoded);
+        byte[] encryptedAlicePubKey = new byte[512]; //encrypted with rsa 4096
+        inputStream.read(encryptedAlicePubKey);
         //decrypt with Bob's RSA private key
-        byte[] alicePubKeyEnc = KeystoreManager.decryptByteArray(encryptedAlicePubKeyEncoded);
+        byte[] alicePubKeyEnc = KeystoreManager.decryptByteArray(encryptedAlicePubKey);
         //decode alice key
         KeyFactory bobKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec
                 (alicePubKeyEnc);
         PublicKey alicePubKey = bobKeyFac.generatePublic(x509KeySpec);
+        Log.d(bob,"Bob sees Alice's DH key as:" + new String(alicePubKey.getEncoded()));
         /*****
          * Bob gets the DH parameters associated with Alice's public key.
          * He must use the same parameters when he generates his own key
@@ -95,8 +95,8 @@ public class DHClient {
          */
         // Bob encodes his public key, and sends it over to Alice.
         byte[] bobPubKeyEnc = bobKpair.getPublic().getEncoded();
-        Log.d(bob,"bob encoded key: " + new String(bobPubKeyEnc));
-        // encrypt with Alice RSA public key
+        Log.d(bob,"bob DH key: " + new String(bobPubKeyEnc));
+        // encrypt Bob DH key with Alice RSA public key
         byte[] encryptedBobPubKey = KeystoreManager.encryptByteArray(serverPublicKey,bobPubKeyEnc);
         outputStream.write(encryptedBobPubKey);
 
@@ -108,20 +108,11 @@ public class DHClient {
         System.out.println("BOB: Execute PHASE1 ...");
         bobKeyAgree.doPhase(alicePubKey, true);
 
-        /*
-         * At this stage, both Alice and Bob have completed the DH key
-         * agreement protocol.
-         * Both generate the (same) shared secret.
-         */
-//        byte[] aliceSharedSecret = aliceKeyAgree.generateSecret();
-//        int aliceLen = aliceSharedSecret.length;
-
         byte[] bobSharedSecret = bobKeyAgree.generateSecret();
 
         System.out.println("Bob secret: " +
                 toHexString(bobSharedSecret));
 
-//
     }
 
     /*

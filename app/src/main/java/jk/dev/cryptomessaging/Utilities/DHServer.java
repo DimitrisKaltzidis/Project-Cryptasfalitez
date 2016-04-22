@@ -15,6 +15,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
@@ -51,7 +52,7 @@ public class DHServer {
     InputStream inputStream;
     OutputStream outputStream;
 
-    PublicKey clientPublicKey;
+    RSAPublicKey clientPublicKey;
 
     public DHServer(InputStream inputStream, OutputStream outputStream, String strclientRSAPublicKey) {
         this.inputStream = inputStream;
@@ -100,23 +101,23 @@ public class DHServer {
 
         // Alice encodes her public key
         byte[] alicePubKeyEnc = aliceKpair.getPublic().getEncoded();
-        X509EncodedKeySpec aliceX509spec = new X509EncodedKeySpec(alicePubKeyEnc);
-        Log.d(alice,"Alice x509.encoded key:" + new String(aliceX509spec.toString()));
+        Log.d(alice,"Alice DH key:" + new String(alicePubKeyEnc.toString()));
         // Alice kani encrypt to public key tis (periexi ta DH values) me to RSA public key tu bob
-        byte[] encryptedAlicePubKey = KeystoreManager.encryptByteArray(KeystoreManager.getMyPublicKey(),aliceX509spec.getEncoded());
+        byte[] encryptedAlicePubKey = KeystoreManager.encryptByteArray(clientPublicKey,alicePubKeyEnc);
+        Log.d(alice,"Alice Encrypted DH key:" + new String(encryptedAlicePubKey));
         // and sends it over to Bob.
         outputStream.write(encryptedAlicePubKey);
 
         //Alice get bob key
-        byte [] encryptedBobPubKeyEncoded = new byte[512];
-        inputStream.read(encryptedBobPubKeyEncoded);
+        byte [] encryptedBobPubKey = new byte[512];
+        inputStream.read(encryptedBobPubKey);
         // decrypt bob key
-        byte[] bobPubKeyEnc = KeystoreManager.decryptByteArray(encryptedBobPubKeyEncoded);
+        byte[] bobPubKeyEnc = KeystoreManager.decryptByteArray(encryptedBobPubKey);
         // decode bob key
         KeyFactory aliceKeyFac = KeyFactory.getInstance("DH");
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bobPubKeyEnc);
         PublicKey bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
-
+        Log.d(alice,"Alice sees Bob's DH key as:" + new String(bobPubKey.getEncoded()));
 
         System.out.println("ALICE: Execute PHASE1 ...");
         aliceKeyAgree.doPhase(bobPubKey, true);
@@ -132,7 +133,6 @@ public class DHServer {
         Log.d(alice,"Alice secret: " +
                 toHexString(aliceSharedSecret));
     }
-
     /*
      * Converts a byte to hex digit and writes to the supplied buffer
      */
