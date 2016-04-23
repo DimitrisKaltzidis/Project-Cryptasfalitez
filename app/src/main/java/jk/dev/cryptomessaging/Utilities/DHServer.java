@@ -17,22 +17,10 @@ import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
-import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.ShortBufferException;
-import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
-
-
-import java.math.BigInteger;
-import java.security.*;
-import java.security.spec.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import javax.crypto.interfaces.*;
 //import com.sun.crypto.provider.SunJCE;
 
 /**
@@ -132,6 +120,27 @@ public class DHServer {
 
         Log.d(alice,"Alice secret: " +
                 toHexString(aliceSharedSecret));
+
+
+        // Algorithm of choice implementation
+        AlgoCrypt algo =
+                new AlgoCrypt(aliceKeyAgree,bobPubKey,"DES","DES/ECB/PKCS5Padding");
+        //100 bytes input limit
+        final int msgSizeLimit = 100;
+        //expected encrypted msg size
+        int expectedMsgSize = algo.getEncryptedMessageSize(msgSizeLimit);
+
+        //send
+        byte [] sendToBob = algo.encrypt("hello doogee".getBytes());
+        outputStream.write(sendToBob);
+        Log.d(alice,"sent message: " + new String(sendToBob));
+
+        //receive
+        byte[] fromBob = new byte[expectedMsgSize];
+        inputStream.read(fromBob);
+        byte[] decrypted = algo.decrypt(fromBob);
+        String message = new String(decrypted);
+        Log.d(alice,"got message: " + message);
     }
     /*
      * Converts a byte to hex digit and writes to the supplied buffer

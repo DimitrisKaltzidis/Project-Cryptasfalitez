@@ -113,6 +113,26 @@ public class DHClient {
         System.out.println("Bob secret: " +
                 toHexString(bobSharedSecret));
 
+        // Algorithm of choice implementation
+        AlgoCrypt algo =
+                new AlgoCrypt(bobKeyAgree,alicePubKey,"DES","DES/ECB/PKCS5Padding");
+        //100 bytes input limit
+        final int msgSizeLimit = 100;
+        //expected encrypted msg size
+        int expectedMsgSize = algo.getEncryptedMessageSize(msgSizeLimit);
+
+        //receive
+        byte[] fromAlice = new byte[expectedMsgSize];
+        inputStream.read(fromAlice);
+        byte[] decrypted = algo.decrypt(fromAlice);
+        String message = new String(decrypted);
+        Log.d(bob,"got message: " + message);
+
+        //send
+        byte [] sendToAlice = algo.encrypt("hello nexuss".getBytes());
+        outputStream.write(sendToAlice);
+        Log.d(bob,"sent message: " + new String(sendToAlice));
+
     }
 
     /*
