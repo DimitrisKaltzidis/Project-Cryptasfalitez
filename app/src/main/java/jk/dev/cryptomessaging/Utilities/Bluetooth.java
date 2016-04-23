@@ -55,7 +55,7 @@ public class Bluetooth {
     private String bobPublicKey;
     private String alicePublicKey;
 	private AlgoCrypt algo;
-
+    private Context context;
 
 	// Constants that indicate the current connection state
 	public static final int STATE_NONE = 0; // we're doing nothing
@@ -72,6 +72,7 @@ public class Bluetooth {
 	 *            A Handler to send messages back to the UI Activity
 	 */
 	public Bluetooth(Context context, Handler handler, boolean isServer) {
+        this.context = context;
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (D) for (BluetoothDevice bd: mAdapter.getBondedDevices()) Log.d(TAG, "Bounded device "+bd);
 		mState = STATE_NONE;
@@ -475,11 +476,14 @@ public class Bluetooth {
 		public void run() {
 			Log.i(TAG, "BEGIN mConnectedThread");
 
+            //get algorithm of choice
+            String algorithm = Preferences.loadPrefsString("CRYPTO_ALGO", "AES", context);
+
             //custom protokoloistories
             if (isServer){
                 try {
                     DHServer dhServer =
-                            new DHServer(mmInStream,mmOutStream,bobPublicKey);
+                            new DHServer(algorithm,mmInStream,mmOutStream,bobPublicKey);
                     dhServer.run("USE_SKIP_DH_PARAMS");
                     algo = dhServer.algo;
                 }catch (Exception e){
@@ -489,7 +493,7 @@ public class Bluetooth {
             }else{
                 try {
                     DHClient dhClient =
-                            new DHClient(mmInStream,mmOutStream,alicePublicKey);
+                            new DHClient(algorithm,mmInStream,mmOutStream,alicePublicKey);
                     dhClient.run("USE_SKIP_DH_PARAMS");
                     algo = dhClient.algo;
                 }catch (Exception e){

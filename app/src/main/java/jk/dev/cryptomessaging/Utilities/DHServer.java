@@ -39,10 +39,12 @@ public class DHServer {
     final String alice = "DHServer";
     InputStream inputStream;
     OutputStream outputStream;
+    String algorithm;
     AlgoCrypt algo;
     RSAPublicKey clientPublicKey;
 
-    public DHServer(InputStream inputStream, OutputStream outputStream, String strclientRSAPublicKey) {
+    public DHServer(String algorithm, InputStream inputStream, OutputStream outputStream, String strclientRSAPublicKey) {
+        this.algorithm = algorithm;
         this.inputStream = inputStream;
         this.outputStream = outputStream;
         this.clientPublicKey = KeystoreManager.base64ToPublicKey(strclientRSAPublicKey);
@@ -122,7 +124,7 @@ public class DHServer {
                 toHexString(aliceSharedSecret));
 
         // Algorithm of choice implementation
-        algo = new AlgoCrypt(aliceKeyAgree,bobPubKey,"AES","AES/ECB/PKCS5Padding");
+        algo = new AlgoCrypt(aliceKeyAgree,bobPubKey,algorithm,algorithm+ "/ECB/PKCS5Padding");
     }
     /*
      * Converts a byte to hex digit and writes to the supplied buffer

@@ -32,9 +32,11 @@ public class DHClient {
     InputStream inputStream;
     OutputStream outputStream;
     RSAPublicKey serverPublicKey;
+    String algorithm;
     AlgoCrypt algo;
 
-    public DHClient(InputStream inputStream, OutputStream outputStream, String strServerPublicKey) {
+    public DHClient(String algorithm, InputStream inputStream, OutputStream outputStream, String strServerPublicKey) {
+        this.algorithm = algorithm;
         this.inputStream = inputStream;
         this.outputStream = outputStream;
         this.serverPublicKey = KeystoreManager.base64ToPublicKey(strServerPublicKey);
@@ -115,7 +117,7 @@ public class DHClient {
                 toHexString(bobSharedSecret));
 
         // Algorithm of choice implementation
-        algo = new AlgoCrypt(bobKeyAgree,alicePubKey,"AES","AES/ECB/PKCS5Padding");
+        algo = new AlgoCrypt(bobKeyAgree,alicePubKey,algorithm,algorithm+ "/ECB/PKCS5Padding");
     }
 
     /*
