@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.*;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -31,6 +32,7 @@ public class DHClient {
     InputStream inputStream;
     OutputStream outputStream;
     RSAPublicKey serverPublicKey;
+    AlgoCrypt algo;
 
     public DHClient(InputStream inputStream, OutputStream outputStream, String strServerPublicKey) {
         this.inputStream = inputStream;
@@ -99,7 +101,6 @@ public class DHClient {
         // encrypt Bob DH key with Alice RSA public key
         byte[] encryptedBobPubKey = KeystoreManager.encryptByteArray(serverPublicKey,bobPubKeyEnc);
         outputStream.write(encryptedBobPubKey);
-
         /*
          * Bob uses Alice's public key for the first (and only) phase
          * of his version of the DH
@@ -114,25 +115,7 @@ public class DHClient {
                 toHexString(bobSharedSecret));
 
         // Algorithm of choice implementation
-        AlgoCrypt algo =
-                new AlgoCrypt(bobKeyAgree,alicePubKey,"DES","DES/ECB/PKCS5Padding");
-        //100 bytes input limit
-        final int msgSizeLimit = 100;
-        //expected encrypted msg size
-        int expectedMsgSize = algo.getEncryptedMessageSize(msgSizeLimit);
-
-        //receive
-        byte[] fromAlice = new byte[expectedMsgSize];
-        inputStream.read(fromAlice);
-        byte[] decrypted = algo.decrypt(fromAlice);
-        String message = new String(decrypted);
-        Log.d(bob,"got message: " + message);
-
-        //send
-        byte [] sendToAlice = algo.encrypt("hello nexuss".getBytes());
-        outputStream.write(sendToAlice);
-        Log.d(bob,"sent message: " + new String(sendToAlice));
-
+        algo = new AlgoCrypt(bobKeyAgree,alicePubKey,"AES","AES/ECB/PKCS5Padding");
     }
 
     /*

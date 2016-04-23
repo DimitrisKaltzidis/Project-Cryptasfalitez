@@ -39,7 +39,7 @@ public class DHServer {
     final String alice = "DHServer";
     InputStream inputStream;
     OutputStream outputStream;
-
+    AlgoCrypt algo;
     RSAPublicKey clientPublicKey;
 
     public DHServer(InputStream inputStream, OutputStream outputStream, String strclientRSAPublicKey) {
@@ -121,26 +121,8 @@ public class DHServer {
         Log.d(alice,"Alice secret: " +
                 toHexString(aliceSharedSecret));
 
-
         // Algorithm of choice implementation
-        AlgoCrypt algo =
-                new AlgoCrypt(aliceKeyAgree,bobPubKey,"DES","DES/ECB/PKCS5Padding");
-        //100 bytes input limit
-        final int msgSizeLimit = 100;
-        //expected encrypted msg size
-        int expectedMsgSize = algo.getEncryptedMessageSize(msgSizeLimit);
-
-        //send
-        byte [] sendToBob = algo.encrypt("hello doogee".getBytes());
-        outputStream.write(sendToBob);
-        Log.d(alice,"sent message: " + new String(sendToBob));
-
-        //receive
-        byte[] fromBob = new byte[expectedMsgSize];
-        inputStream.read(fromBob);
-        byte[] decrypted = algo.decrypt(fromBob);
-        String message = new String(decrypted);
-        Log.d(alice,"got message: " + message);
+        algo = new AlgoCrypt(aliceKeyAgree,bobPubKey,"AES","AES/ECB/PKCS5Padding");
     }
     /*
      * Converts a byte to hex digit and writes to the supplied buffer

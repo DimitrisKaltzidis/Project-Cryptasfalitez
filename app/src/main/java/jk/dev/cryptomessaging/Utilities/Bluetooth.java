@@ -14,6 +14,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -53,7 +54,7 @@ public class Bluetooth {
 	private boolean isServer;
     private String bobPublicKey;
     private String alicePublicKey;
-
+	private AlgoCrypt algo;
 
 
 	// Constants that indicate the current connection state
@@ -473,33 +474,44 @@ public class Bluetooth {
 
 		public void run() {
 			Log.i(TAG, "BEGIN mConnectedThread");
-			byte[] buffer = new byte[1024];
-			int bytes;
+
+            //custom protokoloistories
+            if (isServer){
+                try {
+                    DHServer dhServer =
+                            new DHServer(mmInStream,mmOutStream,bobPublicKey);
+                    dhServer.run("USE_SKIP_DH_PARAMS");
+                    algo = dhServer.algo;
+                }catch (Exception e){
+                    Log.e("Protokoloistories",Log.getStackTraceString(e));
+                    return;
+                }
+            }else{
+                try {
+                    DHClient dhClient =
+                            new DHClient(mmInStream,mmOutStream,alicePublicKey);
+                    dhClient.run("USE_SKIP_DH_PARAMS");
+                    algo = dhClient.algo;
+                }catch (Exception e){
+                    Log.e("Protokoloistories",Log.getStackTraceString(e));
+                    return;
+                }
+            }
 
 			// Keep listening to the InputStream while connected
 			while (true) {
 				try {
-                    //custom protokoloistories
-                    if (isServer){
-                        try {
-                            new DHServer(mmInStream,mmOutStream,bobPublicKey).run("USE_SKIP_DH_PARAMS");
-                        }catch (Exception e){
-                            Log.e("Protokoloistories",Log.getStackTraceString(e));
-                            return;
-                        }
-                    }else{
-                        try {
-                            new DHClient(mmInStream,mmOutStream,alicePublicKey).run("USE_SKIP_DH_PARAMS");
-                        }catch (Exception e){
-                            Log.e("Protokoloistories",Log.getStackTraceString(e));
-                            return;
-                        }
-                    }
-					// Read from the InputStream
-					bytes = mmInStream.read(buffer);
+					// Read from the InputStream and decrypt
+                    byte[] buffer = new byte[1024];
+                    int size = mmInStream.read(buffer);
+                    byte[] encrypted = Arrays.copyOf(buffer,size-1); //exclude EOT byte
+                    Log.d(TAG,"got encrypted message: " + new String(encrypted));
+                    byte[] decrypted = algo.decrypt(encrypted);
+                    String message = new String(decrypted);
+                    Log.d(TAG,"decrypting message: " + new String(decrypted));
 					// Send the obtained bytes to the UI Activity
-					mHandler.obtainMessage(MESSAGE_READ, bytes,
-							-1, buffer).sendToTarget();
+					mHandler.obtainMessage(MESSAGE_READ, decrypted.length,
+							-1, decrypted).sendToTarget();
 				} catch (IOException e) {
 					Log.e(TAG, "disconnected", e);
 					connectionLost();
@@ -546,10 +558,13 @@ public class Bluetooth {
 
         // Check that there's actually something to send
         if (message.length() > 0) {
-            char EOT = (char)3 ;
-            // Get the message bytes and tell the BluetoothChatService to write
-            byte[] send = (message + EOT).getBytes();
-            this.write(send);
+			byte [] sendToBob = algo.encrypt(message.getBytes());
+            //append EOT
+            byte[] sendToBob2 = Arrays.copyOf(sendToBob,sendToBob.length+1);
+            sendToBob2[sendToBob.length] = 3;
+            this.write(sendToBob2);
+			Log.d("bluetooth","sent message: " + new String(sendToBob));
+
         }
     }
 
