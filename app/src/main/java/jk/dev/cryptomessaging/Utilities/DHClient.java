@@ -117,7 +117,7 @@ public class DHClient {
                 toHexString(bobSharedSecret));
 
         // Algorithm of choice implementation
-        algo = new AlgoCrypt(bobKeyAgree,alicePubKey,algorithm,algorithm+ "/ECB/PKCS5Padding");
+        algo = new AlgoCrypt(bobKeyAgree,alicePubKey,algorithm,algorithm+ "/CBC/PKCS5Padding");
     }
 
     /*

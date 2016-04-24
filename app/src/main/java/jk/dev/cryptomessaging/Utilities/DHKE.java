@@ -254,7 +254,6 @@ public class DHKE {
         // Retrieve the parameter that was used, and transfer it to Alice in
         // encoded format
         byte[] encodedParams = bobCipher.getParameters().getEncoded();
-
         /*
          * Alice decrypts, using DES in CBC mode
          */

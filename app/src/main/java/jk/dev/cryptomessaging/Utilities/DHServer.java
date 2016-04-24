@@ -118,13 +118,12 @@ public class DHServer {
          * Both generate the (same) shared secret.
          */
         byte[] aliceSharedSecret = aliceKeyAgree.generateSecret();
-        int aliceLen = aliceSharedSecret.length;
 
         Log.d(alice,"Alice secret: " +
                 toHexString(aliceSharedSecret));
 
         // Algorithm of choice implementation
-        algo = new AlgoCrypt(aliceKeyAgree,bobPubKey,algorithm,algorithm+ "/ECB/PKCS5Padding");
+        algo = new AlgoCrypt(aliceKeyAgree,bobPubKey,algorithm,algorithm+ "/CBC/PKCS5Padding");
     }
     /*
      * Converts a byte to hex digit and writes to the supplied buffer

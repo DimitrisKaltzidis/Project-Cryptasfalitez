@@ -10,10 +10,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -485,7 +489,7 @@ public class Bluetooth {
                     DHServer dhServer =
                             new DHServer(algorithm,mmInStream,mmOutStream,bobPublicKey);
                     dhServer.run("USE_SKIP_DH_PARAMS");
-                    algo = dhServer.algo;
+                        algo = dhServer.algo;
                 }catch (Exception e){
                     Log.e("Protokoloistories",Log.getStackTraceString(e));
                     return;
@@ -505,17 +509,7 @@ public class Bluetooth {
 			// Keep listening to the InputStream while connected
 			while (true) {
 				try {
-					// Read from the InputStream and decrypt
-                    byte[] buffer = new byte[1024];
-                    int size = mmInStream.read(buffer);
-                    byte[] encrypted = Arrays.copyOf(buffer,size-1); //exclude EOT byte
-                    Log.d(TAG,"got encrypted message: " + new String(encrypted));
-                    byte[] decrypted = algo.decrypt(encrypted);
-                    String message = new String(decrypted);
-                    Log.d(TAG,"decrypting message: " + new String(decrypted));
-					// Send the obtained bytes to the UI Activity
-					mHandler.obtainMessage(MESSAGE_READ, decrypted.length,
-							-1, decrypted).sendToTarget();
+					getMessage();
 				} catch (IOException e) {
 					Log.e(TAG, "disconnected", e);
 					connectionLost();
@@ -551,7 +545,40 @@ public class Bluetooth {
 				Log.e(TAG, "close() of connect socket failed", e);
 			}
 		}
+
+        public void getMessage() throws IOException {
+            // Read from the InputStream and decrypt
+            byte[] buffer = new byte[1024];
+            int bufferSize = mmInStream.read(buffer);
+            // read msg size
+            byte[] encryptedMsgSize = Arrays.copyOfRange(buffer,0,4); //4 bytes
+            int msgLen = new BigInteger(encryptedMsgSize).intValue();
+            // read msg
+            byte[] encryptedMsg = Arrays.copyOfRange(buffer,4,4+msgLen);// 16 byte for AES-128
+            // read hmac-sha256
+            byte[] hmac = Arrays.copyOfRange(buffer,4+msgLen,4+msgLen+32);//32 bytes (256 bits)
+            // read iv
+            byte[] iv = Arrays.copyOfRange(buffer,4+msgLen+32,bufferSize);
+            Log.d(TAG,"got encrypted message:" +String.valueOf(encryptedMsg.length)+": " + new String(encryptedMsg));
+            Log.d(TAG,"got iv:" +String.valueOf(iv.length)+": " + new String(iv));
+            Log.d(TAG,"got hmac:" +String.valueOf(hmac.length)+": " + new String(hmac));
+            // check integrity
+            boolean integrityOK = algo.checkHMAC(hmac,encryptedMsg);
+            Log.d(TAG,"integrity:" + String.valueOf(integrityOK));
+            if (!integrityOK){
+                //warn user
+                //Toast crashari to app. istories me thread
+            }
+            //decrypt
+            byte[] decrypted = algo.decrypt(encryptedMsg,iv);
+            String message = new String(decrypted);
+            Log.d(TAG,"decrypting message: " + new String(decrypted));
+            // Send the obtained bytes to the UI Activity
+            mHandler.obtainMessage(MESSAGE_READ, decrypted.length,
+                    -1, decrypted).sendToTarget();
+        }
 	}
+
 
     public void sendMessage(String message) {
         // Check that we're actually connected before trying anything
@@ -562,13 +589,32 @@ public class Bluetooth {
 
         // Check that there's actually something to send
         if (message.length() > 0) {
-			byte [] sendToBob = algo.encrypt(message.getBytes());
-            //append EOT
-            byte[] sendToBob2 = Arrays.copyOf(sendToBob,sendToBob.length+1);
-            sendToBob2[sendToBob.length] = 3;
-            this.write(sendToBob2);
-			Log.d("bluetooth","sent message: " + new String(sendToBob));
-
+            //msg
+			byte[] encryptedMsg = algo.encrypt(message.getBytes());
+            //msg size
+            ByteBuffer b = ByteBuffer.allocate(4);
+            b.putInt(encryptedMsg.length);
+            byte[] encryptedMsgLength = b.array();
+            // algo params
+            byte[] iv = algo.iv;
+            // hmac-sha256
+            byte[] hmac = algo.calculateHMAC(encryptedMsg);
+            //concat arrays
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            try {
+                outputStream.write(encryptedMsgLength);
+                outputStream.write(encryptedMsg);
+                outputStream.write(hmac);
+                outputStream.write(iv);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            byte[] send = outputStream.toByteArray();
+            //send all
+            this.write(send);
+            Log.d(TAG,"sent hmac:" +String.valueOf(hmac.length)+": " + new String(hmac));
+            Log.d(TAG,"sent iv:" +String.valueOf(iv.length)+": " + new String(iv));
+            Log.d("bluetooth","sent message:" +String.valueOf(encryptedMsg.length)+": "+ new String(encryptedMsg));
         }
     }
 
